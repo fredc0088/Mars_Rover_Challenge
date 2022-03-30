@@ -5,7 +5,17 @@ package object model {
 
   case class Position(x: Int, y: Int, isObstacle: Boolean = false)
 
-  class Grid(sizeX: Int, sizeY: Int, obstacles: List[(Int, Int)] = Nil)
+  class Grid(sizeX: Int, sizeY: Int, obstacles: List[(Int, Int)] = Nil) {
+
+    val xBorder: Int = sizeX - 1
+    val yBorder: Int = sizeY - 1
+
+    val squares = (0 to sizeX).toList.flatMap(
+      x => (0 to sizeY).collect{
+        case y if !obstacles.contains((x, y)) => ((x,y), Position(x, y))
+        case y => ((x,y), Position(x, y, isObstacle = true))
+      }
+    ).toMap
 
   }
 
