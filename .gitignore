@@ -2,9 +2,6 @@
 # Compiled class file
 *.class
 
-# Log file
-*.log
-
 # BlueJ files
 *.ctxt
 
@@ -155,3 +152,5 @@ null/
 .bsp
 *.pdf
 .idea
+explorations/exporation-*.log
+logs/*.log

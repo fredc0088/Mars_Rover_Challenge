@@ -8,6 +8,17 @@ package object interface {
     def rotateClockWise: Facing
     def rotateToInstruction(target: Facing): Seq[RoverCommand]
   }
+  object Facing {
+    def translate(directionAsAString: String): Facing = {
+      directionAsAString match {
+        case "N" => UP
+        case "W" => LEFT
+        case "E" => RIGHT
+        case "S" => DOWN
+        case _   => throw new IllegalArgumentException("Invalid: only accepts W,N,S or E as values.")
+      }
+    }
+  }
   final case object UP extends Facing {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x, current.y - 1 match {
@@ -86,6 +97,5 @@ package object interface {
   case object RotateRight extends RoverCommand
   case object GoForward extends RoverCommand
   case class GetToLocation(x: Int, y: Int) extends RoverCommand
-
 
 }

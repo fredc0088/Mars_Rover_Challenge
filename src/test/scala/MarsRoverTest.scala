@@ -1,27 +1,84 @@
-class MarsRoverTest extends AnyFlatSpec with Matchers {
+import interface.{DOWN, GoForward, PlateauInterface, RotateLeft, RotateRight}
+import model.Plateau
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-  "The planet is a grid that " can "generate given a length x and height y" in {
-  }
+class MarsRoverTest extends AnyFunSpec with Matchers {
 
-  "Rover" should "accept starting point (X,Y) on the grid and the direction it is facing" in {
-  }
+  describe("The Plateau-Rover Interface") {
+    describe("when given starting point x and y and an initial direction") {
+      it("generates a rover on the grid if the given coordinates are valid") {
+        val rover = PlateauInterface.initRover(33, 22, "S")(new Plateau(55,60)).rover
+        rover.location.x should be (33)
+        rover.location.y should be (22)
+        rover.facingPosition should be (DOWN)
+      }
 
-  "Rover" should "be able to move forward" in {
-  }
+      it("throws an exception if the given coordinates exists but they are occupied (e.g. by an obstacle)") {
+         val error = intercept[IllegalArgumentException] {
+          PlateauInterface.initRover(33, 22, "S")(new Plateau(55,60, List((33,22)))).rover
+        }
+        error.getMessage should be ("Coordinates 33-22 are occupied.")
+      }
 
-  "Rover" should "be able to turn anticlock " in {
-  }
+      it("throws an exception if the given coordinates do not exists") {
+        val error = intercept[IllegalArgumentException] {
+          PlateauInterface.initRover(33, 22, "S")(new Plateau(10,22)).rover
+        }
+        error.getMessage should be ("Coordinates 33-22 are not applicable.")
+      }
 
-  "Rover" should "be able to receive a sequence of commands" in {
-  }
+    }
 
-  "Rover" should "appear on the other side of the planet if going over the border" in {
-  }
+    describe("has a plateau") {
+      it("which is rounded, where going over a border will make appear in the opposite direction") {
+        val interfaceInitState = PlateauInterface.initRover(2, 0, "N")(new Plateau(5,5))
+        val newState = interfaceInitState.issueCommand(GoForward)
+        newState.rover.location.x should be (2)
+        newState.rover.location.y should be (4)
+      }
+    }
 
-  "Rover" should "going back to the latest location in case an obstacle is found" in {
-    
-  }
-  "Rover" should "memorise if an obstacle is found" in {
+    describe("when give a Rover") {
+      describe("sent forward to the facing position") {
+        describe("if the rover encounters an obstacle") {
+          it("should not send forward the rover") {
+            val interfaceInitState = PlateauInterface.initRover(2, 3, "S")(new Plateau(5,5, List((3,3))))
+            val newState = interfaceInitState.issueCommand(GoForward)
+            newState.rover.location.x should be (2)
+            newState.rover.location.y should be (3)
+          }
+
+          it("has the rover memorizing the obstacle's position") {
+            val interfaceInitState = PlateauInterface.initRover(2, 3, "S")(new Plateau(5,5, List((3,3))))
+            val newState = interfaceInitState.issueCommand(GoForward)
+            newState.rover.obstaclesDetected.map(pos => (pos.x, pos.y)) should be (Seq((3,3)))
+          }
+        }
+      }
+
+    }
+
+    describe("when given a target") {
+      it("should be able to produce the commands for the rover to reach the target via  the most direct path (with no obstacles)") {
+        val newPlanet = new Plateau(24,17)
+        val startCoordinate = (3,12)
+        val commands = PlateauInterface.initRover(
+          startCoordinate._1, startCoordinate._2, "N")(newPlanet)
+          .getInstructionsToShortestPath(18, 5)
+
+        commands.size should be (24)
+        commands should  equal (Seq(
+          RotateRight, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward,
+          GoForward, GoForward, GoForward, GoForward, GoForward, RotateLeft, GoForward, GoForward, GoForward, GoForward, GoForward,
+          GoForward, GoForward
+        ))
+      }
+
+      ignore("should be able to produce the commands for the rover to reach the target via the most direct path avoiding a set of obstacles") {
+
+      }
+    }
   }
 
 }

@@ -1,9 +1,9 @@
 import interface.{GetToLocation, PlateauInterface}
-import model.{Grid, Rover}
+import model.{Plateau, Rover}
 
 object Main extends App {
 
-  val d = new Grid(24, 24, Nil)
+  val d = new Plateau(24, 24, List((16,3), (17,4), (23,23), (8,2), (17,9)))
 
   val rover = Rover(d.squares(4,6))
 
