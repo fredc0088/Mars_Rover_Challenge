@@ -22,7 +22,7 @@ package object interface {
   final case object UP extends Facing {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x, current.y - 1 match {
-        case - 1 => hardLimit
+        case -1 => hardLimit
         case next => next
       })
 
@@ -58,7 +58,7 @@ package object interface {
   final case object LEFT extends Facing {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x - 1 match {
-        case - 1 => hardLimit
+        case -1 => hardLimit
         case next => next
       }, current.y)
 

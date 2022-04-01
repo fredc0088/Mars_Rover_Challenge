@@ -43,16 +43,16 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
       describe("sent forward to the facing position") {
         describe("if the rover encounters an obstacle") {
           it("should not send forward the rover") {
-            val interfaceInitState = PlateauInterface.initRover(2, 3, "S")(new Plateau(5,5, List((3,3))))
+            val interfaceInitState = PlateauInterface.initRover(2, 3, "S")(new Plateau(6,5, List((2,4))))
             val newState = interfaceInitState.issueCommand(GoForward)
             newState.rover.location.x should be (2)
             newState.rover.location.y should be (3)
           }
 
           it("has the rover memorizing the obstacle's position") {
-            val interfaceInitState = PlateauInterface.initRover(2, 3, "S")(new Plateau(5,5, List((3,3))))
+            val interfaceInitState = PlateauInterface.initRover(2, 3, "S")(new Plateau(5,5, List((2,4))))
             val newState = interfaceInitState.issueCommand(GoForward)
-            newState.rover.obstaclesDetected.map(pos => (pos.x, pos.y)) should be (Seq((3,3)))
+            newState.rover.obstaclesDetected.map(pos => (pos.x, pos.y)) should be (Seq((2,4)))
           }
         }
       }

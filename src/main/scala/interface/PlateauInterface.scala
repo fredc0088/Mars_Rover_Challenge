@@ -8,12 +8,11 @@ import scala.annotation.tailrec
 class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging {
 
   private def forward: Position =
-    if(rover.facingPosition == UP || rover.facingPosition == DOWN) {
-      val (x,y) = rover.facingPosition.calculateNextCoordinate(grid.yBorder)(rover.location)
-      Position(x, y)
-    } else {
-      val (x,y) = rover.facingPosition.calculateNextCoordinate(grid.xBorder)(rover.location)
-      Position(x, y)
+    grid.getPositionAt {
+      if (rover.facingPosition == UP || rover.facingPosition == DOWN)
+        rover.facingPosition.calculateNextCoordinate(grid.yBorder)(rover.location)
+      else
+        rover.facingPosition.calculateNextCoordinate(grid.xBorder)(rover.location)
     }
 
   def issueCommand(command: RoverCommand): PlateauInterface =
@@ -34,7 +33,7 @@ class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging 
             updated
         }
       case GetToLocation(x, y) =>
-        if(grid.squares.get((x, y)).filterNot(_.isObstacle).isDefined)
+        if(!grid.getPositionAt((x, y)).isObstacle)
           issueCommandsSequence(getInstructionsToShortestPath((x,y)))
         else throw new Exception
     }
@@ -47,8 +46,8 @@ class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging 
   def getInstructionsToShortestPath(target: (Int, Int)): Seq[RoverCommand] = {
 
     def getRoverAndInstructionToNext(rover: Rover, nextFacing: Facing): Option[(Rover, Seq[RoverCommand])] =
-      grid.squares.get(nextFacing.calculateNextCoordinate{
-        if(nextFacing == DOWN || nextFacing == UP) grid.yBorder
+      grid.getPositionOptAt(nextFacing.calculateNextCoordinate {
+        if (nextFacing == DOWN || nextFacing == UP) grid.yBorder
         else grid.xBorder
       }(rover.location))
         .filterNot(_.isObstacle)
@@ -62,24 +61,24 @@ class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging 
       val rover = newInterfaceState.rover
       val currentLocation = rover.location
       val (currentX, currentY) = (currentLocation.x, currentLocation.y)
-      if(target._1 > rover.location.x)
+      if (target._1 > rover.location.x)
         getRoverAndInstructionToNext(rover, RIGHT) match {
           case Some((newRover, newCommands)) =>
             helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
           case None => helper(newInterfaceState, commands)
         }
-      else if(target._1 < rover.location.x)
+      else if (target._1 < rover.location.x)
         getRoverAndInstructionToNext(rover, LEFT) match {
           case Some((newRover, newCommands)) =>
             helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
           case None => helper(newInterfaceState, commands)
         }
-      else if(target._2 > rover.location.y)
+      else if (target._2 > rover.location.y)
         getRoverAndInstructionToNext(rover, DOWN) match {
           case Some((newRover, newCommands)) =>
             helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
           case None => helper(newInterfaceState, commands)
-        } else if(target._2 < rover.location.y)
+        } else if (target._2 < rover.location.y)
         getRoverAndInstructionToNext(rover, UP) match {
           case Some((newRover, newCommands)) =>
             helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
@@ -88,14 +87,11 @@ class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging 
     }
 
     helper(this, Nil)
-    //      def findShortestPath(queue: Queue[Position], distances: Map[Position, Int], explored: Set[Position]) = {
-    //
-    //      }
   }
 
   def printPlateauState: String =
-    grid.squares.values.groupBy(_.y).map(_._2.toList.sortBy(_.x)).toList
-      .map(t => t.map{
+
+      grid.matrixRepr.map(_.map{
         case position if(position.isObstacle) => "!^/"
         case rover.location                   => " @ "
         case _                                => "[_]"
@@ -110,12 +106,10 @@ object PlateauInterface {
     new PlateauInterface(grid, rover)
 
   def initRover(x: Int, y: Int, initialDirection: String)(plateau: Plateau): PlateauInterface =
-    plateau.squares.get((x, y)) match {
-      case Some(square) if !square.isObstacle =>
+    plateau.getPositionAt(x, y) match {
+      case square if !square.isObstacle =>
         PlateauInterface(plateau, Rover(square, Facing.translate(initialDirection)))
-      case Some(_) =>
-        throw new IllegalArgumentException(s"Coordinates $x-$y are occupied.")
       case _ =>
-        throw new IllegalArgumentException(s"Coordinates $x-$y are not applicable.")
+        throw new IllegalArgumentException(s"Coordinates $x-$y are occupied.")
     }
 }
