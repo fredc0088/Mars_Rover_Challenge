@@ -11,7 +11,7 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
         val rover = PlateauInterface.initRover(33, 22, "S")(new Plateau(55,60)).rover
         rover.location.x should be (33)
         rover.location.y should be (22)
-        rover.facingPosition should be (DOWN)
+        rover.facingDirection should be (DOWN)
       }
 
       it("throws an exception if the given coordinates exists but they are occupied (e.g. by an obstacle)") {

@@ -2,14 +2,14 @@ import model.Position
 
 package object interface {
 
-  sealed trait Facing {
+  sealed trait FacingDirection {
     def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int)
-    def rotateAntiClockWise: Facing
-    def rotateClockWise: Facing
-    def rotateToInstruction(target: Facing): Seq[RoverCommand]
+    def rotateAntiClockWise: FacingDirection
+    def rotateClockWise: FacingDirection
+    def rotateToInstruction(target: FacingDirection): Seq[RoverCommand]
   }
-  object Facing {
-    def translate(directionAsAString: String): Facing = {
+  object FacingDirection {
+    def translate(directionAsAString: String): FacingDirection = {
       directionAsAString match {
         case "N" => UP
         case "W" => LEFT
@@ -19,72 +19,72 @@ package object interface {
       }
     }
   }
-  final case object UP extends Facing {
+  final case object UP extends FacingDirection {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x, current.y - 1 match {
         case -1 => hardLimit
         case next => next
       })
 
-    override def rotateAntiClockWise: Facing = LEFT
+    override def rotateAntiClockWise: FacingDirection = LEFT
 
-    override def rotateClockWise: Facing = RIGHT
+    override def rotateClockWise: FacingDirection = RIGHT
 
-    override def rotateToInstruction(target: Facing): Seq[RoverCommand] = target match {
+    override def rotateToInstruction(target: FacingDirection): Seq[RoverCommand] = target match {
       case UP => Nil
       case DOWN => Seq(RotateRight, RotateRight)
       case LEFT => Seq(RotateLeft)
       case RIGHT => Seq(RotateRight)
     }
   }
-  final case object DOWN extends Facing {
+  final case object DOWN extends FacingDirection {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x,  current.y + 1 match {
         case next if next > hardLimit => 0
         case next => next
       })
 
-    override def rotateAntiClockWise: Facing = RIGHT
+    override def rotateAntiClockWise: FacingDirection = RIGHT
 
-    override def rotateClockWise: Facing = LEFT
+    override def rotateClockWise: FacingDirection = LEFT
 
-    override def rotateToInstruction(target: Facing): Seq[RoverCommand] = target match {
+    override def rotateToInstruction(target: FacingDirection): Seq[RoverCommand] = target match {
       case UP => Seq(RotateLeft, RotateLeft)
       case DOWN => Nil
       case LEFT => Seq(RotateRight)
       case RIGHT => Seq(RotateLeft)
     }
   }
-  final case object LEFT extends Facing {
+  final case object LEFT extends FacingDirection {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x - 1 match {
         case -1 => hardLimit
         case next => next
       }, current.y)
 
-    override def rotateAntiClockWise: Facing = DOWN
+    override def rotateAntiClockWise: FacingDirection = DOWN
 
-    override def rotateClockWise: Facing = UP
+    override def rotateClockWise: FacingDirection = UP
 
-    override def rotateToInstruction(target: Facing): Seq[RoverCommand] = target match {
+    override def rotateToInstruction(target: FacingDirection): Seq[RoverCommand] = target match {
       case UP => Seq(RotateRight)
       case DOWN => Seq(RotateLeft)
       case LEFT => Nil
       case RIGHT => Seq(RotateRight, RotateRight)
     }
   }
-  final case object RIGHT extends Facing {
+  final case object RIGHT extends FacingDirection {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x + 1 match {
         case next if next > hardLimit => 0
         case next => next
       }, current.y)
 
-    override def rotateAntiClockWise: Facing = UP
+    override def rotateAntiClockWise: FacingDirection = UP
 
-    override def rotateClockWise: Facing = DOWN
+    override def rotateClockWise: FacingDirection = DOWN
 
-    override def rotateToInstruction(target: Facing): Seq[RoverCommand] = target match {
+    override def rotateToInstruction(target: FacingDirection): Seq[RoverCommand] = target match {
       case UP => Seq(RotateLeft)
       case DOWN => Seq(RotateRight)
       case LEFT => Seq(RotateRight, RotateRight)
