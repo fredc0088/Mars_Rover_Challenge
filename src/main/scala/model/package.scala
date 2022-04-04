@@ -17,7 +17,10 @@ package object model {
       }
     ).toMap
 
-    lazy val matrixRepr: Seq[Seq[Position]] = squares.values.groupBy(_.y).map(_._2.toSeq.sortBy(_.x)).toSeq
+    lazy val matrixRepr: Seq[Seq[Position]] =
+      squares.values
+        .groupBy(_.y).toSeq.sortBy(_._1)
+        .map(_._2.toSeq.sortBy(_.x))
 
     def getPositionOptAt(coordinates: (Int, Int)): Option[Position] =
       getPositionOptAt(coordinates._1, coordinates._2)

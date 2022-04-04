@@ -34,7 +34,8 @@ class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)
             for {
               updatedPlateau <- this.updateRover(rover = rover.copy(location = nextPosition))
               currentState   <- updatedPlateau.printPlateauState
-              _              <- F.delay(logger.info(s"${(updatedPlateau.rover.location.x, updatedPlateau.rover.location.y)}\n$currentState\n\n\n"))
+              _              <- state.set(currentState)
+              _              <- logger.info(s"${(updatedPlateau.rover.location.x, updatedPlateau.rover.location.y)}\n$currentState\n\n\n")
             } yield updatedPlateau
         }
       case GetToLocation(x, y) =>
@@ -74,7 +75,7 @@ class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)
             F.delay(result)
         }
         case _                            =>
-          F.delay(logger.warn("No path found"))
+          logger.warn("No path found")
             .map(_ => (rover, Nil))
       }
 
@@ -115,7 +116,7 @@ class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)
 
   def printPlateauState: F[String] =
     F.delay(
-      grid.matrixRepr.map(_.map{
+      grid.matrixRepr.map(_.map {
         case position if(position.isObstacle) => "!^/"
         case rover.location                   => " @ "
         case _                                => "[_]"
