@@ -52,7 +52,7 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
           it("has the rover memorizing the obstacle's position") {
             val interfaceInitState = PlateauInterface.initRover(2, 3, "S")(new Plateau(5,5, List((2,4))))
             val newState = interfaceInitState.issueCommand(GoForward)
-            newState.rover.obstaclesDetected.map(pos => (pos.x, pos.y)) should be (Seq((2,4)))
+            newState.rover.obstaclesDetected.map(pos => (pos.x, pos.y)) should be (List((2,4)))
           }
         }
       }
@@ -85,8 +85,8 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
 
         commands.size should be (12)
         commands should equal (Seq(
-          RotateRight, RotateRight, GoForward, GoForward, RotateLeft, GoForward, RotateRight, GoForward,
-          RotateRight, GoForward, GoForward, GoForward
+          RotateRight, RotateRight, GoForward, GoForward, RotateLeft, GoForward, RotateRight,
+          GoForward, RotateLeft, GoForward, GoForward, GoForward
         ))
 
       }
