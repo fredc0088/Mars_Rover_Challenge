@@ -20,6 +20,15 @@ sbt clean run
 
 The parameters can be defined in Main.scala as per the existing example.
 
+## Control the rover
+
+The rover can be initialised with a longitude and latitude parameters, and a facing position indicated as a cardinal point letter (N, S, E, W).
+The commands available are:
+- `GoForward`: advance the rover to the current direction by one square
+- `RotateLeft`: rotate the rover in an anticlock fashion
+- `RotateRight`: rotate the rover in a clock fashion
+- `GoToLocation`: it takes a x and y parameters (latitude and longitude) to represent a place in the grid to reach.
+
 ## Output
 
 The output will be logs in the `exploration` folder. The log name will include the time the exploration was run.
