@@ -17,26 +17,24 @@ You can run with
 ```
 sbt clean run
 ```
-
-The parameters can be defined in Main.scala as per the existing example.
+You can enter the parameters when asked.
+Follow the instructions, after finishing and typing done when entering the commands, press 'ENTER' button on the keyboard
+two to four times consequently, until the program exits.
 
 ## Control the rover
-
 The rover can be initialised with a longitude and latitude parameters, and a facing position indicated as a cardinal point letter (N, S, E, W).
 The commands available are:
-- `GoForward`: advance the rover to the current direction by one square
-- `RotateLeft`: rotate the rover in an anticlock fashion
-- `RotateRight`: rotate the rover in a clock fashion
-- `GoToLocation`: it takes a x and y parameters (latitude and longitude) to represent a place in the grid to reach.
+- `go forward`: advance the rover to the current direction by one square
+- `rotate left`: rotate the rover in an anticlock fashion
+- `rotate right`: rotate the rover in a clock fashion
+- `go to`: it takes a x and y parameters (latitude and longitude) to represent a place in the grid to reach.
 
 ## Output
-
 The output will be logs in the `exploration` folder. The log name will include the time the exploration was run.
 The representation will be the plateau as a grid. `@` indicates the current rover's position, `!^/` represent an obstacles
 Other logging will be placed in the `logs` folder.
 
 ## Testing
-
 You can run test with 
 ```
 sbt clean test
