@@ -7,9 +7,10 @@ import model.{Plateau, Position, Rover}
 import scala.annotation.tailrec
 import cats.implicits._
 import org.typelevel.log4cats.Logger
+import util.LoggerWrapper
 
 class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)
-                            (implicit F: Async[F], state: Ref[F, String], logger: Logger[F]) {
+                            (implicit F: Async[F], state: Ref[F, String], logger: LoggerWrapper[F]) {
 
   private def forward: Position =
     grid.getPositionAt {
@@ -126,10 +127,10 @@ class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)
 
 object PlateauInterface {
 
-  def apply[F[_]: Async : Logger](grid: Plateau, rover: Rover)(implicit state: Ref[F, String]): PlateauInterface[F] =
+  def apply[F[_]: Async : LoggerWrapper](grid: Plateau, rover: Rover)(implicit state: Ref[F, String]): PlateauInterface[F] =
     new PlateauInterface[F](grid, rover)
 
-  def initRover[F[_] : Logger](x: Int, y: Int, initialDirection: String)(plateau: Plateau)(implicit F: Async[F], state: Ref[F, String]): F[PlateauInterface[F]] =
+  def initRover[F[_] : LoggerWrapper](x: Int, y: Int, initialDirection: String)(plateau: Plateau)(implicit F: Async[F], state: Ref[F, String]): F[PlateauInterface[F]] =
     F.delay(plateau.getPositionAt(x, y)) flatMap {
       case square if !square.isObstacle =>
         F.delay(PlateauInterface[F](plateau, Rover(square, FacingDirection.translate(initialDirection))))

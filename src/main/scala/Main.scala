@@ -4,8 +4,7 @@ import cats.effect.{ExitCode, IO, IOApp, Ref}
 import cats.implicits._
 import interface._
 import model.Plateau
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import util.LoggerWrapper
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -16,7 +15,7 @@ object Main extends IOApp {
 
     implicit val console: Console[IO] = Console.make[IO]
 
-    def process(implicit logger: Logger[IO]) = for {
+    def process(implicit logger: LoggerWrapper[IO]) = for {
       _         <- EitherT.right(console.println("Define environment"))
       _         <- EitherT.right(console.println("Insert Planet max length:"))
       plateauX  <- readIntegerFromConsole()
@@ -44,7 +43,7 @@ object Main extends IOApp {
       _         <- processConcurrently(interface, queue, completed)
     } yield ()
 
-    Slf4jLogger.create[IO].flatMap { logger =>
+    LoggerWrapper[IO]() flatMap { logger =>
       process(logger).value.flatMap {
         case Right(_) =>
           IO.pure(ExitCode.Success)

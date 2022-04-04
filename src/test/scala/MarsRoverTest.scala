@@ -4,16 +4,19 @@ import interface.{DOWN, GoForward, PlateauInterface, RotateLeft, RotateRight}
 import model.Plateau
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import util.LoggerWrapper
 
 class MarsRoverTest extends AnyFunSpec with Matchers {
 
   implicit lazy val runtime: IORuntime = cats.effect.unsafe.IORuntime.global
+  implicit lazy val logger: LoggerWrapper[IO] = LoggerWrapper[IO](false).unsafeRunSync()
 
   describe("The Plateau-Rover Interface") {
     implicit def stateRef = Ref.of[IO, String]("").unsafeRunSync()
     describe("when given starting point x and y and an initial direction") {
       it("generates a rover on the grid if the given coordinates are valid") {
-        val rover = PlateauInterface.initRover[IO](33, 22, "S")(new Plateau(55,60)).rover
+        val rover = PlateauInterface.initRover[IO](33, 22, "S")(new Plateau(55,60))
+          .unsafeRunSync.rover
         rover.location.x should be (33)
         rover.location.y should be (22)
         rover.facingDirection should be (DOWN)
@@ -21,14 +24,16 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
 
       it("throws an exception if the given coordinates exists but they are occupied (e.g. by an obstacle)") {
          val error = intercept[IllegalArgumentException] {
-          PlateauInterface.initRover[IO](33, 22, "S")(new Plateau(55,60, List((33,22)))).rover
+          PlateauInterface.initRover[IO](33, 22, "S")(new Plateau(55,60, List((33,22))))
+            .unsafeRunSync.rover
         }
         error.getMessage should be ("Coordinates 33-22 are occupied.")
       }
 
       it("throws an exception if the given coordinates do not exists") {
         val error = intercept[IllegalArgumentException] {
-          PlateauInterface.initRover[IO](33, 22, "S")(new Plateau(10,22)).rover
+          PlateauInterface.initRover[IO](33, 22, "S")(new Plateau(10,22))
+            .unsafeRunSync.rover
         }
         error.getMessage should be ("Coordinates 33-22 are not applicable.")
       }
@@ -38,7 +43,7 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
     describe("has a plateau") {
       it("which is rounded, where going over a border will make appear in the opposite direction") {
         val interfaceInitState = PlateauInterface.initRover[IO](2, 0, "N")(new Plateau(5,5))
-        val newState = interfaceInitState.issueCommand(GoForward)
+        val newState = interfaceInitState.flatMap(_.issueCommand(GoForward))
           .unsafeRunSync()
 
         newState.rover.location.x should be (2)
@@ -51,7 +56,7 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
         describe("if the rover encounters an obstacle") {
           it("should not send forward the rover") {
             val interfaceInitState = PlateauInterface.initRover[IO](2, 3, "S")(new Plateau(6,5, List((2,4))))
-            val newState = interfaceInitState.issueCommand(GoForward)
+            val newState = interfaceInitState.flatMap(_.issueCommand(GoForward))
               .unsafeRunSync()
 
             newState.rover.location.x should be (2)
@@ -60,7 +65,7 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
 
           it("has the rover memorizing the obstacle's position") {
             val interfaceInitState = PlateauInterface.initRover[IO](2, 3, "S")(new Plateau(5,5, List((2,4))))
-            val newState = interfaceInitState.issueCommand(GoForward)
+            val newState = interfaceInitState.flatMap(_.issueCommand(GoForward))
               .unsafeRunSync()
             newState.rover.obstaclesDetected.map(pos => (pos.x, pos.y)) should be (Set((2,4)))
           }
@@ -75,7 +80,7 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
         val startCoordinate = (3,12)
         val commands = PlateauInterface.initRover[IO](
           startCoordinate._1, startCoordinate._2, "N")(newPlanet)
-          .getInstructionsToShortestPath(18, 5)
+          .flatMap(_.getInstructionsToShortestPath(18, 5))
           .unsafeRunSync()
 
         commands.size should be (24)
@@ -92,7 +97,7 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
         val startCoordinate = (4,1)
         val commands = PlateauInterface.initRover[IO](
           startCoordinate._1, startCoordinate._2, "E")(newPlanet)
-          .getInstructionsToShortestPath(1, 5)
+          .flatMap(_.getInstructionsToShortestPath(1, 5))
           .unsafeRunSync()
 
         commands.size should be (12)
