@@ -13,3 +13,5 @@ lazy val `mars_rover_challenge` = (project in file("."))
       "org.scalatest"              %% "scalatest"       % "3.2.11" % Test
     )
   )
+
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
