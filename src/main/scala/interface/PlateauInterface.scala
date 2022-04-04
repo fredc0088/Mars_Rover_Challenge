@@ -38,11 +38,6 @@ class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging 
         else throw new IllegalArgumentException("")
     }
 
-  def calcPoint(x: Int, y: Int)= {
-    if(x )
-  }
-
-
   def issueCommandsSequence(commands: Seq[RoverCommand]): PlateauInterface =
     commands.foldLeft(this) { (state, command) =>
       state.issueCommand(command)
