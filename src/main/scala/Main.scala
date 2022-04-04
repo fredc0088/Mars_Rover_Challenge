@@ -3,12 +3,12 @@ import model.{Plateau, Rover}
 
 object Main extends App {
 
-  val d = new Plateau(24, 24, List((16,3), (17,4), (23,23), (8,2), (17,9)))
+  val d = new Plateau(6, 6, List((2,3)))
 
-  val rover = Rover(d.getPositionAt(4,6))
+  val rover = Rover(d.getPositionAt(4,3))
 
   PlateauInterface(d, rover)
-    .issueCommand(GetToLocation(22,17))
+    .issueCommand(GetToLocation(1,1))
     .issueCommand(GetToLocation(0, 5))
 
 }

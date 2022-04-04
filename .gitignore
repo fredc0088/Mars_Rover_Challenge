@@ -152,5 +152,5 @@ null/
 .bsp
 *.pdf
 .idea
-explorations/exporation-*.log
+explorations/exploration-*.log
 logs/*.log

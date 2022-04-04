@@ -35,8 +35,13 @@ class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging 
       case GetToLocation(x, y) =>
         if(!grid.getPositionAt((x, y)).isObstacle)
           issueCommandsSequence(getInstructionsToShortestPath((x,y)))
-        else throw new Exception
+        else throw new IllegalArgumentException("")
     }
+
+  def calcPoint(x: Int, y: Int)= {
+    if(x )
+  }
+
 
   def issueCommandsSequence(commands: Seq[RoverCommand]): PlateauInterface =
     commands.foldLeft(this) { (state, command) =>
@@ -50,40 +55,58 @@ class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging 
         if (nextFacing == DOWN || nextFacing == UP) grid.yBorder
         else grid.xBorder
       }(rover.location))
-        .filterNot(_.isObstacle)
         .map(potNextLoc =>
+          if(potNextLoc.isObstacle)
+            (rover.copy(obstaclesDetected = rover.obstaclesDetected + potNextLoc), Nil)
+          else
           (rover.copy(location = potNextLoc, facingPosition = nextFacing),
             rover.facingPosition.rotateToInstruction(nextFacing) :+ GoForward)
         )
 
     @tailrec
+    def nextAttemptsIfObstacle(rover: Rover, directionSequence: List[Facing]): (Rover, Seq[RoverCommand]) = {
+      directionSequence match {
+        case head :: otherDirectionsToTry => getRoverAndInstructionToNext(rover, head) match {
+          case Some((oldRover, Nil)) =>
+            nextAttemptsIfObstacle(oldRover, otherDirectionsToTry)
+          case Some(result) =>
+            result
+        }
+        case _ =>
+          logger.warn("No path found")
+          (rover, Nil)
+      }
+    }
+
+    @tailrec
     def helper(newInterfaceState: PlateauInterface, commands: Seq[RoverCommand]): Seq[RoverCommand] = {
       val rover = newInterfaceState.rover
-      val currentLocation = rover.location
-      val (currentX, currentY) = (currentLocation.x, currentLocation.y)
-      if (target._1 > rover.location.x)
-        getRoverAndInstructionToNext(rover, RIGHT) match {
-          case Some((newRover, newCommands)) =>
-            helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
-          case None => helper(newInterfaceState, commands)
-        }
-      else if (target._1 < rover.location.x)
-        getRoverAndInstructionToNext(rover, LEFT) match {
-          case Some((newRover, newCommands)) =>
-            helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
-          case None => helper(newInterfaceState, commands)
-        }
-      else if (target._2 > rover.location.y)
-        getRoverAndInstructionToNext(rover, DOWN) match {
-          case Some((newRover, newCommands)) =>
-            helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
-          case None => helper(newInterfaceState, commands)
-        } else if (target._2 < rover.location.y)
-        getRoverAndInstructionToNext(rover, UP) match {
-          case Some((newRover, newCommands)) =>
-            helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
-          case None => helper(newInterfaceState, commands)
-        } else commands
+      if (target._1 > rover.location.x) {
+        val (newRover, newCommands) = nextAttemptsIfObstacle(
+          rover, RIGHT +: {
+            if (target._2 <= rover.location.y) List(UP, DOWN) else List(DOWN, UP)
+          } :+ LEFT)
+        helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
+      }
+      else if (target._1 < rover.location.x) {
+        val (newRover, newCommands) = nextAttemptsIfObstacle(
+          rover, LEFT +: {
+            if (target._2 < rover.location.y) List(UP, DOWN) else List(DOWN, UP)
+          } :+ RIGHT)
+        helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
+      } else if (target._2 > rover.location.y) {
+        val (newRover, newCommands) = nextAttemptsIfObstacle(
+          rover, DOWN +: {
+            if (target._1 <= rover.location.x) List(LEFT, RIGHT) else List(RIGHT, LEFT)
+          } :+ UP)
+        helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
+      } else if (target._2 < rover.location.y) {
+        val (newRover, newCommands) = nextAttemptsIfObstacle(
+          rover, UP +: {
+            if (target._1 <= rover.location.x) List(LEFT, RIGHT) else List(RIGHT, LEFT)
+          } :+ DOWN)
+        helper(newInterfaceState.updateRover(newRover), commands ++ newCommands)
+      } else commands
     }
 
     helper(this, Nil)

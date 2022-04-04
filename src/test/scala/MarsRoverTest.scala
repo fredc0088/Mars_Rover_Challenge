@@ -68,14 +68,26 @@ class MarsRoverTest extends AnyFunSpec with Matchers {
           .getInstructionsToShortestPath(18, 5)
 
         commands.size should be (24)
-        commands should  equal (Seq(
+        commands should equal (Seq(
           RotateRight, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward, GoForward,
           GoForward, GoForward, GoForward, GoForward, GoForward, RotateLeft, GoForward, GoForward, GoForward, GoForward, GoForward,
           GoForward, GoForward
         ))
       }
 
-      ignore("should be able to produce the commands for the rover to reach the target via the most direct path avoiding a set of obstacles") {
+      it("should be able to produce the commands for the rover to reach the target via the most direct path avoiding a set of obstacles") {
+        val obstaclesCoordinates = List((1,1))
+        val newPlanet = new Plateau(6,6, obstaclesCoordinates)
+        val startCoordinate = (4,1)
+        val commands = PlateauInterface.initRover(
+          startCoordinate._1, startCoordinate._2, "E")(newPlanet)
+          .getInstructionsToShortestPath(1, 5)
+
+        commands.size should be (12)
+        commands should equal (Seq(
+          RotateRight, RotateRight, GoForward, GoForward, RotateLeft, GoForward, RotateRight, GoForward,
+          RotateRight, GoForward, GoForward, GoForward
+        ))
 
       }
     }
