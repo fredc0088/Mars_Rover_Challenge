@@ -22,7 +22,7 @@ package object interface {
   final case object UP extends FacingDirection {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x, current.y - 1 match {
-        case -1 => hardLimit
+        case -1   => hardLimit
         case next => next
       })
 
@@ -31,9 +31,9 @@ package object interface {
     override def rotateClockWise: FacingDirection = RIGHT
 
     override def rotateToInstruction(target: FacingDirection): Seq[RoverCommand] = target match {
-      case UP => Nil
-      case DOWN => Seq(RotateRight, RotateRight)
-      case LEFT => Seq(RotateLeft)
+      case UP    => Nil
+      case DOWN  => Seq(RotateRight, RotateRight)
+      case LEFT  => Seq(RotateLeft)
       case RIGHT => Seq(RotateRight)
     }
   }
@@ -41,7 +41,7 @@ package object interface {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x,  current.y + 1 match {
         case next if next > hardLimit => 0
-        case next => next
+        case next                     => next
       })
 
     override def rotateAntiClockWise: FacingDirection = RIGHT
@@ -49,16 +49,16 @@ package object interface {
     override def rotateClockWise: FacingDirection = LEFT
 
     override def rotateToInstruction(target: FacingDirection): Seq[RoverCommand] = target match {
-      case UP => Seq(RotateLeft, RotateLeft)
-      case DOWN => Nil
-      case LEFT => Seq(RotateRight)
+      case UP    => Seq(RotateLeft, RotateLeft)
+      case DOWN  => Nil
+      case LEFT  => Seq(RotateRight)
       case RIGHT => Seq(RotateLeft)
     }
   }
   final case object LEFT extends FacingDirection {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x - 1 match {
-        case -1 => hardLimit
+        case -1   => hardLimit
         case next => next
       }, current.y)
 
@@ -67,9 +67,9 @@ package object interface {
     override def rotateClockWise: FacingDirection = UP
 
     override def rotateToInstruction(target: FacingDirection): Seq[RoverCommand] = target match {
-      case UP => Seq(RotateRight)
-      case DOWN => Seq(RotateLeft)
-      case LEFT => Nil
+      case UP    => Seq(RotateRight)
+      case DOWN  => Seq(RotateLeft)
+      case LEFT  => Nil
       case RIGHT => Seq(RotateRight, RotateRight)
     }
   }
@@ -77,7 +77,7 @@ package object interface {
     override def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int) =
       current => (current.x + 1 match {
         case next if next > hardLimit => 0
-        case next => next
+        case next                     => next
       }, current.y)
 
     override def rotateAntiClockWise: FacingDirection = UP
@@ -85,9 +85,9 @@ package object interface {
     override def rotateClockWise: FacingDirection = DOWN
 
     override def rotateToInstruction(target: FacingDirection): Seq[RoverCommand] = target match {
-      case UP => Seq(RotateLeft)
-      case DOWN => Seq(RotateRight)
-      case LEFT => Seq(RotateRight, RotateRight)
+      case UP    => Seq(RotateLeft)
+      case DOWN  => Seq(RotateRight)
+      case LEFT  => Seq(RotateRight, RotateRight)
       case RIGHT => Nil
     }
   }

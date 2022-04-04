@@ -35,7 +35,7 @@ class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging 
       case GetToLocation(x, y) =>
         if(!grid.getPositionAt((x, y)).isObstacle)
           issueCommandsSequence(getInstructionsToShortestPath((x,y)))
-        else throw new IllegalArgumentException("")
+        else throw new IllegalArgumentException(s"Position at $x, $y is already occupied.")
     }
 
   def issueCommandsSequence(commands: Seq[RoverCommand]): PlateauInterface =
@@ -59,19 +59,18 @@ class PlateauInterface(val grid: Plateau, val rover: Rover) extends LazyLogging 
         )
 
     @tailrec
-    def nextAttemptsIfObstacle(rover: Rover, directionSequence: List[FacingDirection]): (Rover, Seq[RoverCommand]) = {
+    def nextAttemptsIfObstacle(rover: Rover, directionSequence: List[FacingDirection]): (Rover, Seq[RoverCommand]) =
       directionSequence match {
         case head :: otherDirectionsToTry => getRoverAndInstructionToNext(rover, head) match {
           case Some((oldRover, Nil)) =>
             nextAttemptsIfObstacle(oldRover, otherDirectionsToTry)
-          case Some(result) =>
+          case Some(result)          =>
             result
         }
-        case _ =>
+        case _                            =>
           logger.warn("No path found")
           (rover, Nil)
       }
-    }
 
     @tailrec
     def helper(newInterfaceState: PlateauInterface, commands: Seq[RoverCommand]): Seq[RoverCommand] = {
@@ -127,7 +126,7 @@ object PlateauInterface {
     plateau.getPositionAt(x, y) match {
       case square if !square.isObstacle =>
         PlateauInterface(plateau, Rover(square, FacingDirection.translate(initialDirection)))
-      case _ =>
+      case _                            =>
         throw new IllegalArgumentException(s"Coordinates $x-$y are occupied.")
     }
 }

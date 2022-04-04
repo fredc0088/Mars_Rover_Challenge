@@ -11,36 +11,37 @@ object Main extends IOApp with LazyLogging {
   override def run(args: List[String]): IO[ExitCode] = {
     val console = Console.make[IO]
     val process = for {
-      _ <- EitherT.right(console.println("Define environment"))
-      _ <- EitherT.right(console.println("Insert Planet max length:"))
-      plateauX <- readIntegerFromConsole()
-      _ <- EitherT.right(console.println("Insert Planet max height:"))
-      plateauY <- readIntegerFromConsole()
-      _ <- EitherT.right(console.println("Insert obstacles coordinates; type 'done' when finished."))
-      obstacles <- insertObstacles(Set(), console)
-      newPlateau = new Plateau(plateauX, plateauY, obstacles.toList)
-      _ <- EitherT.right(console.println("Define starting rover position on the planet"))
-      _ <- EitherT.right(console.println("Insert latitude position of the rover:"))
-      roverX <- readIntegerFromConsole()
-      _ <- EitherT.right(console.println("Insert latitude position of the rover:"))
-      roverY <- readIntegerFromConsole()
-      _ <- EitherT.right(console.println("Insert facing direction of the rover (N, S, E or W):"))
-      roverDir <- EitherT.right(console.readLine)
-      _ <- EitherT.right(console.println("Loading exploration interface..."))
-      interface <- EitherT(IO(PlateauInterface.initRover(roverX, roverY, roverDir)(newPlateau)).attempt)
-      _ <- EitherT.right(console.println("Insert commands for rover, typing `done` when finished"))
-      queue <- EitherT.right(Queue.unbounded[IO, RoverCommand])
-      completed <- EitherT.right(Ref.of[IO, Boolean](false))
+      _            <- EitherT.right(console.println("Define environment"))
+      _            <- EitherT.right(console.println("Insert Planet max length:"))
+      plateauX     <- readIntegerFromConsole()
+      _            <- EitherT.right(console.println("Insert Planet max height:"))
+      plateauY     <- readIntegerFromConsole()
+      _            <- EitherT.right(console.println("Insert obstacles coordinates; type 'done' when finished."))
+      obstacles    <- insertObstacles(Set(), console)
+      newPlateau   = new Plateau(plateauX, plateauY, obstacles.toList)
+      _            <- EitherT.right(console.println("Define starting rover position on the planet"))
+      _            <- EitherT.right(console.println("Insert latitude position of the rover:"))
+      roverX       <- readIntegerFromConsole()
+      _            <- EitherT.right(console.println("Insert latitude position of the rover:"))
+      roverY       <- readIntegerFromConsole()
+      _            <- EitherT.right(console.println("Insert facing direction of the rover (N, S, E or W):"))
+      roverDir     <- EitherT.right(console.readLine)
+      _            <- EitherT.right(console.println("Loading exploration interface..."))
+      interface    <- EitherT(IO(PlateauInterface.initRover(roverX, roverY, roverDir)(newPlateau)).attempt)
+      _            <- EitherT.right(console.println("Insert commands for rover, typing `done` when finished"))
+      queue        <- EitherT.right(Queue.unbounded[IO, RoverCommand])
+      completed    <- EitherT.right(Ref.of[IO, Boolean](false))
+      interfaceRef <- EitherT.right(Ref.of[IO, PlateauInterface](interface))
       _ <- EitherT((for {
-        x1 <- insertCommandsLoop(queue, console, completed).value.start
-        x2 <-  useCommands(interface, queue, console, completed).start
-        _ <- x1.join
-        _ <- x2.join
+        x1 <- insertCommandsLoop(queue, console, completed)(interfaceRef).value.start
+        x2 <-  useCommands(interfaceRef, queue, console, completed).start
+        _  <- x1.join
+        _  <- x2.join
       } yield  ()).attempt)
     } yield ()
 
     process.value.flatMap {
-      case Right(_) =>
+      case Right(_)    =>
         IO.pure(ExitCode.Success)
       case Left(error) =>
         IO(logger.error("Failure due " + error.getMessage)).map(_ => ExitCode.Error)
@@ -52,7 +53,7 @@ object Main extends IOApp with LazyLogging {
       _ <- console.println("Insert coordinate x and y with a dividing space")
       input <- console.readLine
     } yield input.trim) flatMap {
-      case "done" | "" => EitherT.right(IO(obstacles))
+      case "done" | ""       => EitherT.right(IO(obstacles))
       case coordinatesString =>
         EitherT(IO(coordinatesString.split(" ").take(2))
           .map(coordinates => (coordinates.head.toInt, coordinates.last.toInt)).attempt)
@@ -66,19 +67,22 @@ object Main extends IOApp with LazyLogging {
       .attempt
     )
 
-  private def useCommands(plateauInterface: PlateauInterface, queue: Queue[IO, RoverCommand], console: Console[IO], completed: Ref[IO, Boolean]): IO[Either[Throwable, Any]] = {
+  private def useCommands(
+    plateauInterfaceRef: Ref[IO, PlateauInterface],
+    queue: Queue[IO, RoverCommand],
+    console: Console[IO],
+    completed: Ref[IO, Boolean]
+  ): IO[Either[Throwable, Any]] =
     completed.get.flatMap{ completion =>
       queue.tryTake.flatMap {
-        case Some(command) =>
-          IO(useCommands(plateauInterface.issueCommand(command), queue, console, completed))
-        case _ =>
-          if(completion)
-            IO.unit.attempt
-          else
-            IO(useCommands(plateauInterface, queue, console, completed))
+        case Some(command)   =>
+          plateauInterfaceRef.update( plateauInterface =>
+            plateauInterface.issueCommand(command)
+          ) >> IO(useCommands(plateauInterfaceRef, queue, console, completed))
+        case _ if completion => IO.unit.attempt
+        case _               => IO(useCommands(plateauInterfaceRef, queue, console, completed))
       }.attempt
     }
-  }
 
   private def insertCommands(queue: Queue[IO, RoverCommand], console: Console[IO])(command: String): IO[Boolean] =
     command.toLowerCase match {
@@ -100,16 +104,23 @@ object Main extends IOApp with LazyLogging {
         IO.raiseError(new IllegalArgumentException(s"$other is not a valid command"))
     }
 
-  private def insertCommandsLoop(queue: Queue[IO, RoverCommand], console: Console[IO], completed: Ref[IO, Boolean]): EitherT[IO, Throwable, Unit] = {
+  private def insertCommandsLoop(
+    queue: Queue[IO, RoverCommand],
+    console: Console[IO],
+    completed: Ref[IO, Boolean]
+  )(interfaceRef: Ref[IO, PlateauInterface]): EitherT[IO, Throwable, Unit] = {
     val fn = insertCommands(queue, console) _
 
     def helper(): IO[Unit] = {
       for {
-        _ <- console.println("Give a command or type 'done' if you want to end the exploration.")
+        _ <- console.println("Give a command; type either 'done' or leave empty if you want to end the exploration.")
+        _ <- console.println("Check the Readme.md for details on the commands available.")
         commandStd <- console.readLine
         _ <- commandStd.trim match {
           case "done" | "" => completed.set(true)
-          case command => fn(command) >> helper()
+          case command => fn(command) >>
+            interfaceRef.get.flatMap(interface => console.println(s"Current exploration status:\n${interface.printPlateauState}\n")) >>
+            helper()
           case _ => IO.raiseError(new IllegalArgumentException(s"Invalid input"))
         }
       } yield ()
