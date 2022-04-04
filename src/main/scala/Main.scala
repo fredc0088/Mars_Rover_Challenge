@@ -2,20 +2,21 @@ import cats.data.EitherT
 import cats.effect.std.{Console, Queue}
 import cats.effect.{ExitCode, IO, IOApp, Ref}
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import interface._
 import model.Plateau
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-object Main extends IOApp with LazyLogging {
+object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
     implicit val console: Console[IO] = Console.make[IO]
 
-    val process = for {
+    def process(implicit logger: Logger[IO]) = for {
       _         <- EitherT.right(console.println("Define environment"))
       _         <- EitherT.right(console.println("Insert Planet max length:"))
       plateauX  <- readIntegerFromConsole()
@@ -27,25 +28,29 @@ object Main extends IOApp with LazyLogging {
       _         <- EitherT.right(console.println("Define starting rover position on the planet"))
       _         <- EitherT.right(console.println("Insert latitude position of the rover:"))
       roverX    <- readIntegerFromConsole()
-      _         <- EitherT.right(console.println("Insert latitude position of the rover:"))
+      _         <- EitherT.right(console.println("Insert longitude position of the rover:"))
       roverY    <- readIntegerFromConsole()
       _         <- EitherT.right(console.println("Insert facing direction of the rover (N, S, E or W):"))
       roverDir  <- EitherT.right(console.readLine)
       _         <- EitherT.right(console.println("Loading exploration interface..."))
-      implicit0(interfaceRef: Ref[IO, String]) <- EitherT.right(Ref.of[IO, String](""))
-      interface <- EitherT(IO(PlateauInterface.initRover[IO](roverX, roverY, roverDir)(newPlateau)).attempt)
+      implicit0(interfaceStateRef: Ref[IO, String]) <- EitherT.right(Ref.of[IO, String](""))
+      interface <- EitherT(PlateauInterface.initRover[IO](roverX, roverY, roverDir)(newPlateau).attempt)
       queue     <- EitherT.right(Queue.unbounded[IO, RoverCommand])
       completed <- EitherT.right(Ref.of[IO, Boolean](false))
-      _         <- EitherT(interface.printPlateauState.flatTap(interfaceRef.set).attempt)
+      initial   <- EitherT(interface.printPlateauState
+        .flatMap(initialState => interfaceStateRef.updateAndGet(_ => initialState)).attempt)
+      _         <- EitherT.right(console.println(s"($roverX $roverY)\n$initial"))
       _         <- EitherT.right(console.println("Insert commands for rover, typing `done` when finished"))
       _         <- processConcurrently(interface, queue, completed)
     } yield ()
 
-    process.value.flatMap {
-      case Right(_) =>
-        IO.pure(ExitCode.Success)
-      case Left(error) =>
-        IO(logger.error("Failure due " + error.getMessage)).map(_ => ExitCode.Error)
+    Slf4jLogger.create[IO].flatMap { logger =>
+      process(logger).value.flatMap {
+        case Right(_) =>
+          IO.pure(ExitCode.Success)
+        case Left(error) =>
+          logger.error("Failure due " + error.getMessage).map(_ => ExitCode.Error)
+      }
     }
 
   }
@@ -135,7 +140,7 @@ object Main extends IOApp with LazyLogging {
           case command => fn(command) >>
             IO.sleep(1.seconds) >>
             interfaceRef.get.flatMap(interface => console.println(s"Current exploration status:\n$interface\n")) >>
-            helper()
+            helper
           case _ => IO.raiseError(new IllegalArgumentException(s"Invalid input"))
         }
       } yield ()

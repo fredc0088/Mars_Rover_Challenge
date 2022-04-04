@@ -2,13 +2,14 @@ package interface
 
 import cats.effect.Ref
 import cats.effect.kernel.Async
-import com.typesafe.scalalogging.LazyLogging
 import model.{Plateau, Position, Rover}
 
 import scala.annotation.tailrec
 import cats.implicits._
+import org.typelevel.log4cats.Logger
 
-class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)(implicit F: Async[F], state: Ref[F, String]) extends LazyLogging {
+class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)
+                            (implicit F: Async[F], state: Ref[F, String], logger: Logger[F]) {
 
   private def forward: Position =
     grid.getPositionAt {
@@ -112,25 +113,27 @@ class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)(implicit F: As
   }
 
   def printPlateauState: F[String] =
-    F.delay(grid.matrixRepr.map(_.map{
-      case position if(position.isObstacle) => "!^/"
-      case rover.location                   => " @ "
-      case _                                => "[_]"
-    }.mkString).mkString("\n"))
+    F.delay(
+      grid.matrixRepr.map(_.map{
+        case position if(position.isObstacle) => "!^/"
+        case rover.location                   => " @ "
+        case _                                => "[_]"
+      }.mkString).mkString("\n")
+    )
 
   def updateRover(rover: Rover): F[PlateauInterface[F]] = F.delay(PlateauInterface[F](grid, rover))
 }
 
 object PlateauInterface {
 
-  def apply[F[_]](grid: Plateau, rover: Rover)(implicit F: Async[F], state: Ref[F, String]): PlateauInterface[F] =
+  def apply[F[_]: Async : Logger](grid: Plateau, rover: Rover)(implicit state: Ref[F, String]): PlateauInterface[F] =
     new PlateauInterface[F](grid, rover)
 
-  def initRover[F[_]](x: Int, y: Int, initialDirection: String)(plateau: Plateau)(implicit F: Async[F], state: Ref[F, String]): PlateauInterface[F] =
-    plateau.getPositionAt(x, y) match {
+  def initRover[F[_] : Logger](x: Int, y: Int, initialDirection: String)(plateau: Plateau)(implicit F: Async[F], state: Ref[F, String]): F[PlateauInterface[F]] =
+    F.delay(plateau.getPositionAt(x, y)) flatMap {
       case square if !square.isObstacle =>
-        PlateauInterface[F](plateau, Rover(square, FacingDirection.translate(initialDirection)))
+        F.delay(PlateauInterface[F](plateau, Rover(square, FacingDirection.translate(initialDirection))))
       case _                            =>
-        throw new IllegalArgumentException(s"Coordinates $x-$y are occupied.")
+        F.raiseError(new IllegalArgumentException(s"Coordinates $x-$y are occupied."))
     }
 }
