@@ -2,6 +2,13 @@ import model.Position
 
 package object interface {
 
+  /**
+   * Represent one of the four directions that a rover
+   * is facing. Every direction has its own understanding of how to reach
+   * the next location in relation to a current location.
+   * Also, they are aware of the steps they need to instruct the rover to
+   * another determined direction.
+   */
   sealed trait FacingDirection {
     def calculateNextCoordinate(hardLimit: Int): Position => (Int, Int)
     def rotateAntiClockWise: FacingDirection
