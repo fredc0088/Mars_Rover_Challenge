@@ -40,5 +40,5 @@ You can run test with
 sbt clean test
 ```
 ## Current Issues WIP
-- As the grid is a wrapping plateau, sometimes the shortest path can be achieved by crossing an edge and appearing at the opposite side. I am devising a method that will take that into account when trying to reach a position in the plateau.
-- There is some problem on getting the status' representation of the exploration to get properly updated concurrently
+- As the grid is a wrapping plateau, sometimes the shortest path can be achieved by crossing an edge and appearing at the opposite side. I am devising a method that will take that into account when trying to reach a position in the plateau. (branch `wrapping_autopilot_logic`).
+- There is some problem on getting the status' representation of the exploration to get properly updated concurrently.
