@@ -108,8 +108,9 @@ class MarsRoverExploration[F[_]](implicit console: Console[F], F: Async[F]) {
     completed.get.flatMap { completion =>
       queue.tryTake.flatMap {
         case Some(command)   =>
-          plateauInterface.issueCommand(command) >>
-            useCommands(plateauInterface, queue, completed)
+          plateauInterface.issueCommand(command).flatMap(
+            newInterface => useCommands(newInterface, queue, completed)
+          )
         case _ if completion => F.unit.attempt
         case _               => useCommands(plateauInterface, queue, completed)
       }
