@@ -6,9 +6,20 @@ import model.{Plateau, Position, Rover}
 
 import scala.annotation.tailrec
 import cats.implicits._
-import org.typelevel.log4cats.Logger
 import util.LoggerWrapper
 
+/**
+ * Interface for the interaction between the rover, the plateau and the external
+ * input controlling the rover.
+ * Can be seen as a single exploration.
+ *
+ * @param grid: the plateau, represented as a grid of determined size.
+ * @param rover: the rover
+ * @param F: instance for [[Async]]
+ * @param state: atomic reference keeping the visual representation of the
+ * current state of an ongoing exploration
+ * @param logger: instance of a [[Logger]]
+ */
 class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)
                             (implicit F: Async[F], state: Ref[F, String], logger: LoggerWrapper[F]) {
 
