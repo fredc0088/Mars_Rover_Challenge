@@ -17,13 +17,7 @@ object Main extends IOApp {
 
     def process(implicit logger: LoggerWrapper[IO]) = for {
       _         <- EitherT.right(console.println("Define environment"))
-      _         <- EitherT.right(console.println("Insert Planet max length:"))
-      plateauX  <- readIntegerFromConsole()
-      _         <- EitherT.right(console.println("Insert Planet max height:"))
-      plateauY  <- readIntegerFromConsole()
-      _         <- EitherT.right(console.println("Insert obstacles coordinates; type 'done' when finished."))
-      obstacles <- insertObstacles(Set(), console)
-      newPlateau = new Plateau(plateauX, plateauY, obstacles.toList)
+      plateau   <- generatePlateau
       _         <- EitherT.right(console.println("Define starting rover position on the planet"))
       _         <- EitherT.right(console.println("Insert latitude position of the rover:"))
       roverX    <- readIntegerFromConsole()
@@ -33,7 +27,7 @@ object Main extends IOApp {
       roverDir  <- EitherT.right(console.readLine)
       _         <- EitherT.right(console.println("Loading exploration interface..."))
       implicit0(interfaceStateRef: Ref[IO, String]) <- EitherT.right(Ref.of[IO, String](""))
-      interface <- EitherT(PlateauInterface.initRover[IO](roverX, roverY, roverDir)(newPlateau).attempt)
+      interface <- EitherT(PlateauInterface.initRover[IO](roverX, roverY, roverDir)(plateau).attempt)
       queue     <- EitherT.right(Queue.unbounded[IO, RoverCommand])
       completed <- EitherT.right(Ref.of[IO, Boolean](false))
       initial   <- EitherT(interface.printPlateauState
@@ -67,6 +61,28 @@ object Main extends IOApp {
         _ <- x2.join
       } yield ()
     ).attempt)
+
+  private def generatePlateau(implicit console: Console[IO]) =
+    for {
+      _         <- EitherT.right(console.println("Time to create the plateau"))
+      _         <- EitherT.right(console.println("Is it a whole planet? y(default) or n"))
+      (x, y)    <- EitherT.right(console.readLine.map {
+        case "n" =>
+          for {
+            _         <- EitherT.right(console.println("Insert plateau's max length:"))
+            plateauX  <- readIntegerFromConsole()
+            _         <- EitherT.right(console.println("Insert plateau's max height:"))
+            plateauY  <- readIntegerFromConsole()
+          } yield (plateauX, plateauY)
+          console.println("")
+        case _   =>
+          EitherT.right(console.println("Insert planet's size:")).flatMap { _ =>
+            readIntegerFromConsole().map(size => (size, size))
+          }
+      })
+      _         <- EitherT.right(console.println("Insert obstacles coordinates; type 'done' when finished."))
+      obstacles <- insertObstacles(Set(), console)
+    } yield new Plateau(x, y, obstacles.toList)
 
   private def insertObstacles(obstacles: Set[(Int, Int)], console: Console[IO]): EitherT[IO, Throwable, Set[(Int, Int)]] =
     EitherT.right(for {

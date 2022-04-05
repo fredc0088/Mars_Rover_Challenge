@@ -5,6 +5,13 @@ package object model {
 
   case class Position(x: Int, y: Int, isObstacle: Boolean = false)
 
+  /**
+   * A plateau of determined height and width, represented as a grid of 'x' x 'y' squares.
+   *
+   * @param sizeX: the width of the plateau
+   * @param sizeY: the height of the plateau
+   * @param obstacles: a list of xy coordinates each of which will represented an obstacle
+   */
   class Plateau(sizeX: Int, sizeY: Int, obstacles: List[(Int, Int)] = Nil) {
 
     val xBorder: Int = sizeX - 1
@@ -34,4 +41,5 @@ package object model {
     def getPositionAt(x: Int, y: Int): Position =
       getPositionOptAt(x, y).getOrElse(throw new IllegalArgumentException(s"Coordinates $x-$y are not applicable."))
   }
+
 }
