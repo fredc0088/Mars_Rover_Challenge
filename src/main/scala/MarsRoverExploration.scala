@@ -52,14 +52,14 @@ class MarsRoverExploration[F[_]](implicit console: Console[F], F: Async[F]) {
     queue: Queue[F, RoverCommand],
     isCompleted: Ref[F, Boolean]
   )(implicit state: Ref[F, String]) =
-    EitherT((
-      for {
-        x1 <- insertCommandsLoop(queue, isCompleted)(state).value.start
-        x2 <- EitherT(useCommands(interface, queue, isCompleted)).map(_ => ()).value.start
-        _ <- x1.join
-        _ <- x2.join
-      } yield ()
-    ).attempt)
+    EitherT(
+        for {
+          x1 <- insertCommandsLoop(queue, isCompleted)(state).value.start
+          x2 <- EitherT(useCommands(interface, queue, isCompleted)).map(_ => ()).value.start
+          y1 <- x1.joinWithNever
+          y2 <- x2.joinWithNever
+        } yield y1 <+> y2
+    )
 
   private def generatePlateau =
     for {
