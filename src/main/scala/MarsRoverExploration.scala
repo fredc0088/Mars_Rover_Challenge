@@ -87,7 +87,7 @@ class MarsRoverExploration[F[_]](implicit console: Console[F], F: Async[F]) {
       _ <- console.println("Insert coordinate x and y with a dividing space")
       input <- console.readLine
     } yield input.trim) flatMap {
-      case "done" | ""       => EitherT.right(IO(obstacles))
+      case "done" | ""       => EitherT.right(F.delay(obstacles))
       case coordinatesString =>
         EitherT(F.delay(coordinatesString.split(" ").take(2))
           .map(coordinates => (coordinates.head.toInt, coordinates.last.toInt)).attempt)
