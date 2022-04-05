@@ -64,9 +64,9 @@ object Main extends IOApp {
 
   private def generatePlateau(implicit console: Console[IO]) =
     for {
-      _         <- EitherT.right(console.println("Time to create the plateau"))
-      _         <- EitherT.right(console.println("Is it a whole planet? y(default) or n"))
-      (x, y)    <- EitherT.right(console.readLine.map {
+      _           <- EitherT.right(console.println("Time to create the plateau"))
+      _           <- EitherT.right(console.println("Is it a whole planet? y(default) or n"))
+      (x, y)      <- EitherT.right(console.readLine).flatMap {
         case "n" =>
           for {
             _         <- EitherT.right(console.println("Insert plateau's max length:"))
@@ -74,12 +74,11 @@ object Main extends IOApp {
             _         <- EitherT.right(console.println("Insert plateau's max height:"))
             plateauY  <- readIntegerFromConsole()
           } yield (plateauX, plateauY)
-          console.println("")
         case _   =>
           EitherT.right(console.println("Insert planet's size:")).flatMap { _ =>
             readIntegerFromConsole().map(size => (size, size))
           }
-      })
+      }
       _         <- EitherT.right(console.println("Insert obstacles coordinates; type 'done' when finished."))
       obstacles <- insertObstacles(Set(), console)
     } yield new Plateau(x, y, obstacles.toList)
