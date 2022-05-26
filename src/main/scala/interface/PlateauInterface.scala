@@ -101,24 +101,33 @@ class PlateauInterface[F[_]](val grid: Plateau, val rover: Rover)
           )
         }
 
+    def decideDirection(sourceLocation: Int, targetLocation: Int, length: Int) = {
+      Math.abs(targetLocation - sourceLocation) match {
+        case i if i < length / 2 =>
+          println(i)
+          println(printPlateauState + "\n\n")
+          true
+        case i =>
+          println(i)
+          println(printPlateauState + "\n\n")
+          false
+      }
+    }
+
     def helper(interfaceState: PlateauInterface[F], commands: Seq[RoverCommand]): F[Seq[RoverCommand]] = {
       val rover = interfaceState.rover
-      if (target._1 > rover.location.x)
-        getNewStateAndRecurse(rover, RIGHT +: {
-          if (target._2 <= rover.location.y) List(UP, DOWN) else List(DOWN, UP)
-        } :+ LEFT, commands)(interfaceState)
-      else if (target._1 < rover.location.x)
-        getNewStateAndRecurse(rover, LEFT +: {
-          if (target._2 < rover.location.y) List(UP, DOWN) else List(DOWN, UP)
-        } :+ RIGHT, commands)(interfaceState)
-      else if (target._2 > rover.location.y)
-        getNewStateAndRecurse(rover, DOWN +: {
-          if (target._1 <= rover.location.x) List(LEFT, RIGHT) else List(RIGHT, LEFT)
-        } :+ UP, commands)(interfaceState)
-      else if (target._2 < rover.location.y)
-        getNewStateAndRecurse(rover, UP +: {
-          if (target._1 <= rover.location.x) List(LEFT, RIGHT) else List(RIGHT, LEFT)
-        } :+ DOWN, commands)(interfaceState)
+      lazy val xDirection = decideDirection(target._1, rover.location.x, grid.xBorder + 1)
+      lazy val yDirection = decideDirection(target._2, rover.location.y, grid.yBorder + 1)
+      if(target._1 != rover.location.x)
+        getNewStateAndRecurse(rover,
+          if (xDirection) RIGHT +: { if (yDirection) List(UP, DOWN) else List(DOWN, UP) } :+ LEFT
+          else LEFT +: { if (yDirection) List(DOWN, UP) else List(UP, DOWN) } :+ LEFT,
+          commands)(interfaceState)
+      else if(target._2 != rover.location.y)
+        getNewStateAndRecurse(rover,
+          if (yDirection) DOWN +: { if (xDirection) List(RIGHT, LEFT) else List(LEFT, RIGHT) } :+ UP
+          else UP +: { if (xDirection) List(RIGHT, LEFT) else List(LEFT, RIGHT) } :+ DOWN,
+          commands)(interfaceState)
       else F.delay(commands)
     }
 
